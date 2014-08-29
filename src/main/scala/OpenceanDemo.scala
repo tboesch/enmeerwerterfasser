@@ -66,10 +66,10 @@ class PacketStreamReaderActor extends Actor with ActorLogging {
 }
 
 
-object OpenceanDemo {
+object OpenceanDemo extends App {
   private val logger: Logger = LoggerFactory.getLogger("HelloWorld::Main")
 
-  def main(args: Array[String]) {
+  override def main(args: Array[String]) {
 
     val system = ActorSystem("flow")
 
