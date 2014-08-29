@@ -12,7 +12,8 @@ libraryDependencies ++= Seq(
   "org.rrd4j" % "rrd4j" % "2.2",
   "com.neuronrobotics" % "nrjavaserial" % "3.7.5.1",
   "org.slf4j" % "slf4j-jdk14" % "1.7.7",
-  "org.slf4j" % "slf4j-log4j12" % "1.7.7"
+  "org.slf4j" % "slf4j-log4j12" % "1.7.7",
+  "com.typesafe.akka" %% "akka-actor" % "2.3.5"
 )
 
 initialCommands := "import com.orbinista.enmeerwerterfasser._"
