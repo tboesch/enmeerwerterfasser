@@ -1,15 +1,15 @@
 package com.orbinista.enmeerwerterfasser
 
-import org.opencean.core.{PacketStreamReader, EnoceanSerialConnector}
-import org.opencean.core.packets.{RadioPacket4BS, RadioPacket, BasicPacket}
+import scala.collection.JavaConversions._
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import akka.actor.{Props, ActorSystem, ActorLogging, Actor}
-import org.opencean.core.eep.{EltakoLumSensor, TemperaturSensor, EltakoHumidityAndTemperatureSensor}
+import org.opencean.core.{PacketStreamReader, EnoceanSerialConnector}
+import org.opencean.core.packets.{RadioPacket4BS, RadioPacket, BasicPacket}
+import org.opencean.core.eep.{EEPParser, EltakoLumSensor, TemperaturSensor, EltakoHumidityAndTemperatureSensor}
 import org.opencean.core.common.{Parameter, EEPId}
 import org.opencean.core.address.{EnoceanParameterAddress, EnoceanId}
-
-import scala.collection.JavaConversions._
+import org.opencean.core.common.values.NumberWithUnit
 
 case class ReadPacket()
 
@@ -29,8 +29,8 @@ class PacketStreamReaderActor extends Actor with ActorLogging {
   log.info("Setting up PacketStreamReaderActor")
 
   val port = "/dev/cu.usbserial-FTWYOD2G"
-  val connector = new EnoceanSerialConnector();
-  connector.connect(port);
+  val connector = new EnoceanSerialConnector()
+  connector.connect(port)
   val receiver: PacketStreamReader = new PacketStreamReader(connector)
 
   override def postStop() = {
@@ -48,10 +48,16 @@ class PacketStreamReaderActor extends Actor with ActorLogging {
           profile match {
             case Some(profile) => {
               val javaMap = profile.parsePacket(radioPacket)
-              val result = javaMap.mapValues(_.getValue)
-              result.foreach {
-                case (key: EnoceanParameterAddress, value) => {
-                  log.info(s"sensor: ${key.getEnoceanDeviceId.toString}, parameter: ${key.getParameterId}, value: ${value}")
+              javaMap.foreach {
+                case (key: EnoceanParameterAddress, number: NumberWithUnit) => {
+                  number.getValue match {
+                    case big: BigDecimal => {
+                      log.info(s"sensor: ${key.getEnoceanDeviceId.toString}, parameter: ${key.getParameterId}, value: ${big.floatValue()} ${number.getUnit}")
+                    }
+                    case value: Number => {
+                      log.info(s"sensor: ${key.getEnoceanDeviceId.toString}, parameter: ${key.getParameterId}, value: $value ${number.getUnit}")
+                    }
+                  }
                 }
                 case _ => None
               }
