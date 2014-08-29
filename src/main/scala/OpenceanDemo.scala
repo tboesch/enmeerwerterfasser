@@ -6,7 +6,8 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import akka.actor.{Props, ActorSystem, ActorLogging, Actor}
 import org.opencean.core.eep.{EltakoLumSensor, TemperaturSensor, EltakoHumidityAndTemperatureSensor}
-import org.opencean.core.common.EEPId
+import org.opencean.core.common.{Parameter, EEPId}
+import org.opencean.core.address.{EnoceanParameterAddress, EnoceanId}
 
 import scala.collection.JavaConversions._
 
@@ -41,20 +42,21 @@ class PacketStreamReaderActor extends Actor with ActorLogging {
     case ReadPacket =>
       val receivedPacket: BasicPacket = receiver.read
       if (receivedPacket != null) {
-        //log.info(receivedPacket.toString)
         if (receivedPacket.isInstanceOf[RadioPacket]) {
           val radioPacket: RadioPacket = receivedPacket.asInstanceOf[RadioPacket]
-          log.info("Sender: " + radioPacket.getSenderId.toString)
           val profile = profiles.get(radioPacket.getSenderId.toString)
           profile match {
             case Some(profile) => {
               val javaMap = profile.parsePacket(radioPacket)
               val result = javaMap.mapValues(_.getValue)
-              log.info("Information from profile: " + result.toString())
+              result.foreach {
+                case (key: EnoceanParameterAddress, value) => {
+                  log.info(s"sensor: ${key.getEnoceanDeviceId.toString}, parameter: ${key.getParameterId}, value: ${value}")
+                }
+                case _ => None
+              }
             }
-            case None => {
-              log.info("No profile registered for: " + radioPacket.getSenderId.toString)
-            }
+            case _ => None
           }
         }
       }
