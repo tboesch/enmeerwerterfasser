@@ -8,8 +8,8 @@ class CsvValueLoggerActor extends Actor with ActorLogging {
   def receive = {
     case data: LogData => {
       log.info(data.toString)
-      val writer = CSVWriter.open("a.csv", append = true)
-      //writer.writeRow(data.unapply)
+      val writer = CSVWriter.open("enocean_data_log.csv", append = true)
+      writer.writeRow(List(data.datetime.toString("YYYY-MM-dd HH:mm:ss"), data.senderId.toString, data.value.toString, data.unit))
     }
   }
 
