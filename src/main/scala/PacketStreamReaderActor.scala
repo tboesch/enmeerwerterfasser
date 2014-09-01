@@ -2,7 +2,7 @@ package com.orbinista.enmeerwerterfasser
 
 import scala.collection.JavaConversions._
 
-import akka.actor.{ActorLogging, Actor}
+import akka.actor.{Props, ActorLogging, Actor}
 import org.opencean.core.address.{EnoceanId, EnoceanParameterAddress}
 import org.opencean.core.common.EEPId
 import org.opencean.core.common.values.NumberWithUnit
@@ -21,14 +21,9 @@ class PacketStreamReaderActor extends Actor with ActorLogging {
   import context._
   import PacketStreamReaderActor._
 
-  log.info("Setting up PacketStreamReaderActor")
-
   val receiver = setupReceiver
 
-  override def postStop() = {
-    connector.disconnect()
-    system.shutdown()
-  }
+  val logger = system.actorOf(Props[CsvValueLoggerActor], name = "csv-logger")
 
   def receive = {
     case ReadPacket =>
@@ -36,13 +31,20 @@ class PacketStreamReaderActor extends Actor with ActorLogging {
       if (receivedPacket != null) {
         extractInformation(receivedPacket) match {
           case Some(data: LogData) => {
-            log.info(data.toString)
+            logger ! data
           }
           case None =>
          }
       }
       self ! ReadPacket
   }
+
+  override def postStop() = {
+    connector.disconnect()
+    system.shutdown()
+  }
+
+
 }
 
 
