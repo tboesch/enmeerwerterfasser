@@ -1,6 +1,7 @@
 package com.orbinista.enmeerwerterfasser
 
 import scala.collection.JavaConversions._
+import scala.collection.mutable.ListBuffer
 
 import akka.actor.{Props, ActorLogging, Actor}
 import org.opencean.core.address.{EnoceanId, EnoceanParameterAddress}
@@ -29,12 +30,7 @@ class PacketStreamReaderActor extends Actor with ActorLogging {
     case ReadPacket =>
       val receivedPacket: BasicPacket = receiver.read
       if (receivedPacket != null) {
-        extractInformation(receivedPacket) match {
-          case Some(data: LogData) => {
-            logger ! data
-          }
-          case None =>
-         }
+        extractInformation(receivedPacket) foreach (logger ! _)
       }
       self ! ReadPacket
   }
@@ -43,7 +39,6 @@ class PacketStreamReaderActor extends Actor with ActorLogging {
     connector.disconnect()
     system.shutdown()
   }
-
 
 }
 
@@ -64,7 +59,8 @@ object PacketStreamReaderActor {
     new PacketStreamReader(connector)
   }
 
-  def extractInformation(receivedPacket: BasicPacket): Option[LogData] = {
+  def extractInformation(receivedPacket: BasicPacket): ListBuffer[LogData] = {
+    val data = new ListBuffer[LogData]
     if (receivedPacket.isInstanceOf[RadioPacket]) {
       val radioPacket: RadioPacket = receivedPacket.asInstanceOf[RadioPacket]
       val profile = profiles.get(radioPacket.getSenderId.toString)
@@ -74,12 +70,10 @@ object PacketStreamReaderActor {
           javaMap.foreach {
             case (key: EnoceanParameterAddress, number: NumberWithUnit) => {
               number.getValue match {
-                case big: BigDecimal => {
-                  return Some(new LogData(senderId = key.getEnoceanDeviceId, value = big.floatValue(), unit = number.getUnit.toString, datetime = DateTime.now))
-                }
-                case value: Number => {
-                  return Some(new LogData(senderId = key.getEnoceanDeviceId, value = value.floatValue, unit = number.getUnit.toString, datetime = DateTime.now))
-                }
+                case big: BigDecimal =>
+                  data += new LogData(senderId = key.getEnoceanDeviceId, value = big.floatValue(), unit = number.getUnit.toString, datetime = DateTime.now)
+                case value: Number =>
+                  data += new LogData(senderId = key.getEnoceanDeviceId, value = value.floatValue, unit = number.getUnit.toString, datetime = DateTime.now)
               }
             }
             case _ => None
@@ -88,6 +82,6 @@ object PacketStreamReaderActor {
         case _ => None
       }
     }
-    None
+    data
   }
 }
