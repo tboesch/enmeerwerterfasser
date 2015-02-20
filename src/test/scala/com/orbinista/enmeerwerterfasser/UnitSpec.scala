@@ -1,8 +1,6 @@
 package com.orbinista.enmeerwerterfasser
 
-/**
- * Created by tboesch on 02.09.14.
- */
-class UnitSpec {
+import org.scalatest._
 
-}
+abstract class UnitSpec extends FlatSpec with Matchers with
+OptionValues with Inside with Inspectors
