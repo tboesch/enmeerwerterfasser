@@ -54,7 +54,8 @@ object PacketStreamReaderActor {
   val connector = new EnoceanSerialConnector()
 
   def setupReceiver = {
-    val port = "/dev/cu.usbserial-FTWYOD2G"
+//    val port = "/dev/cu.usbserial-FTWYOD2G"
+    val port = "/dev/ttyUSB0"
     connector.connect(port)
     new PacketStreamReader(connector)
   }
